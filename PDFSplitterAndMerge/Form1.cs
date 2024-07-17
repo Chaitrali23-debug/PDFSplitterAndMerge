@@ -86,22 +86,33 @@ namespace PDFSplitterAndMerge
             ShowLoader();
             try
             {
-                string[] pdfFiles = Directory.GetFiles(folderPath, "*.pdf");
-                if (pdfFiles.Count() != 0)
+                string txtcomppth = txtFolderName.Text;
+                if(txtcomppth == "")
                 {
-
-                    foreach (string pdfFile in pdfFiles) { 
-                     // Start the PDF splitting process asynchronously
-                        await SplitPDF(pdfFile);
-                    }
-                    MessageBox.Show("PDF files have been split successfully.");
-                    // Hide the loader
+                    MessageBox.Show("Please select Complaint folder");
                     HideLoader();
                 }
                 else
                 {
-                    MessageBox.Show("Folder does not contain any pdf files.");
+                    string[] pdfFiles = Directory.GetFiles(folderPath, "*.pdf");
+                    if (pdfFiles.Count() != 0)
+                    {
+
+                        foreach (string pdfFile in pdfFiles)
+                        {
+                            // Start the PDF splitting process asynchronously
+                            await SplitPDF(pdfFile);
+                        }
+                        MessageBox.Show("PDF files have been split successfully.");
+                        // Hide the loader
+                        HideLoader();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Folder does not contain any pdf files.");
+                    }
                 }
+                
             }
             catch (Exception)
             {
@@ -120,6 +131,7 @@ namespace PDFSplitterAndMerge
                 string nextLine = string.Empty;
                 string fileNumber = string.Empty;
                 string formattedDate = string.Empty;
+                string secondLastLine=string.Empty;
                 DateTime date;
                 using (PdfReader reader = new PdfReader(pdfFilePath))
                 {
@@ -131,44 +143,31 @@ namespace PDFSplitterAndMerge
 
                         // Split the text into separate lines
                         string[] lines = pageText.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-                        // Iterate through each line
-                        for (int j = 0; j < lines.Length; j++)
+                        
+                        for(int j= lines.Length-1; j >= 0; j--)
                         {
-                            // Check if the line contains the desired file number
-                            if (lines[j].Contains("Efile"))
+                            // Split the line into words
+                            string[] words = lines[j].Split(' ');
+
+                            // Get the last word
+                            string lastWord = words[words.Length - 2];
+
+                            string flno= words[words.Length - 1];
+
+                            // Parse the last word as a DateTime
+                            if (DateTime.TryParse(lastWord, out DateTime date1))
                             {
-                                // Check if the next line exists
-                                if (j + 1 < lines.Length)
+                                // Convert the DateTime to the "yyyymmdd" format
+                                 formattedDate = date1.ToString("yyyyMMdd");
+                            }
+                            else
+                            {
+                                if (lastWord.Length == 7 && int.TryParse(lastWord, out _))
                                 {
-                                    // Retrieve the next line (7 digits)
-                                    nextLine = lines[j + 1];
-
-                                    // Extract the file number from the next line
-                                    fileNumber = nextLine.Substring(0, 7);
-
+                                    fileNumber = lastWord;
                                 }
                             }
-                            if (lines[j].Contains("DATE"))
-                            {
-                                // Find the index of "DATE:"
-                                int dateIndex = lines[j].IndexOf("DATE:");
 
-                                if (dateIndex != -1)
-                                {
-                                    // Extract the date substring
-                                    string dateSubstring = lines[j].Substring(dateIndex + 5).Trim();
-
-                                    // Parse the date in MM/dd/yyyy format
-
-                                    if (DateTime.TryParseExact(dateSubstring, "MM/dd/yyyy", null, System.Globalization.DateTimeStyles.None, out date))
-                                    {
-                                        // Format the date as yyyyMMdd
-                                        formattedDate = date.ToString("yyyyMMdd");
-
-                                    }
-                                }
-                            }
                             if (fileNumber != "" && formattedDate != "")
                             {
                                 // Create a new document for the current page        
@@ -188,6 +187,7 @@ namespace PDFSplitterAndMerge
                                         document.Close();
                                     }
                                 }
+                                
                             }
                         }
                     }
@@ -331,45 +331,41 @@ namespace PDFSplitterAndMerge
                     string[] lines = pageText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
                     // Search for "DATED" in one line and the date in the next line
-                    for (int i = 0; i < lines.Length - 1; i++)
+                    for (int i = 0; i < lines.Length-1; i++)
                     {
                         string currentLine = lines[i].Trim();
                         string nextLine = lines[i + 1].Trim();
 
-                        // Check if current line contains "DATED"
-                        if (currentLine.StartsWith("DATED"))
+                        Regex regex1 = new Regex(@"^([A-Za-z]+ \d{1,2}, \d{4})$");
+                        Match match1 = regex1.Match(currentLine);
+
+                        string dateString1 = currentLine.Trim();
+
+                        if (DateTime.TryParseExact(dateString1, "MMMM dd, yyyy", null, System.Globalization.DateTimeStyles.None, out date))
                         {
-                            // Extract date from the next line
-                            Regex regex = new Regex(@"^([A-Za-z]+ \d{1,2}, \d{4})$");
-                            Match match = regex.Match(nextLine);
-
-                            //if (match.Success)
-                            //{
-                            string dateString = nextLine.Trim();//.Substring(dateIndex + 5).Trim(); //match.Groups[1].Value;
-
-                            // Parse the extracted date string
-                            //DateTime date;
-                            if (DateTime.TryParseExact(dateString, "MMMM d,yyyy", null, System.Globalization.DateTimeStyles.None, out date))
-                            {
-                                // Format the date as "yyyyMMdd"
-                                formattedDate = date.ToString("yyyyMMdd");
-                                //return formattedDate;
-                            }
+                            // Format the date as "yyyyMMdd"
+                            formattedDate = date.ToString("yyyyMMdd");
+                            //return formattedDate;
                         }
-                    }
 
-                    lastLine = lines[lines.Length - 1].Trim();
+                        string[] words = lines[i].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (!string.IsNullOrEmpty(lastLine))
-                    {
-                        string[] words = lastLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        string fileNumber = words[words.Length - 1];
-                        fileno[flnoarrindex] = fileNumber.Trim();
-                        flnoarrindex = flnoarrindex + 1;
+                        if (words.Length > 0)
+                        {
+                            string fno = words[0];
+
+                            if (fno.Length == 7 && int.TryParse(fno, out _))
+                            {
+                                string fileNumber = words[words.Length - 1];
+                                fileno[flnoarrindex] = fileNumber.Trim();
+                                flnoarrindex = flnoarrindex + 1;
+                            }
+
+                        }
                     }
                 }
 
-                for (int i = 0; i < fileno.Length; i++)
+                for (int i = 0; i < fileno.Length-1 ; i++)
                 {
                     int startPage;
                     int endPage;
@@ -380,10 +376,7 @@ namespace PDFSplitterAndMerge
                         if (fileno[i] == fileno[i + 1])
                         {
                             startPage = i;
-                            endPage = i + 1;
-
-                            outputFilePath = Path.Combine(militaryFolderPath, fileno[i] + "_MSCAFF_" + formattedDate + ".pdf");
-
+                            endPage = i + 1;                            
 
                             // Step 2: Search and merge from the scra folder
                             scraFilePath = Path.Combine(scraFolderPath, "MILT_" + fileno[i] + "_D1" + ".pdf");
@@ -391,7 +384,17 @@ namespace PDFSplitterAndMerge
 
                             if (File.Exists(scraFilePath))
                             {
+                                outputFilePath = Path.Combine(militaryFolderPath, fileno[i] + "_MSCAFF_" + formattedDate + ".pdf");
+
                                 SplitPage(reader, startPage + 1, endPage + 1, outputFilePath, scraFilePath);
+                            }
+                            else
+                            {
+                                string directorypath = militaryFolderPath + "\\" + "_Exception";
+                                if(!Directory.Exists(directorypath))
+                                    Directory.CreateDirectory(directorypath);
+                                outputFilePath = Path.Combine(directorypath, fileno[i] + "_MSCAFF_" + formattedDate + ".pdf");
+                                AddInExceptionFolder(reader, startPage + 1, endPage + 1, outputFilePath);
                             }
                         }
                     }
@@ -403,6 +406,32 @@ namespace PDFSplitterAndMerge
 
                 throw;
             }            
+        }
+        
+        //Add in exception folder inside the military folder.
+        //if the military file number not find in scra folder.
+        private void AddInExceptionFolder(PdfReader reader, int StartpageNumber, int EndpageNumber, string outputFilePath)
+        {
+            try
+            {
+                Document doc = new Document();
+                PdfCopy copy = new PdfCopy(doc, new FileStream($"{outputFilePath}", FileMode.Create));
+                doc.Open();
+                // Merge original page from military folder
+                for (int page = StartpageNumber; page <= EndpageNumber; page++)
+                {                   
+                   
+                    PdfImportedPage importedPage = copy.GetImportedPage(reader, page);
+                    copy.AddPage(importedPage);
+                }
+                doc.Close();
+                copy.Close();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         // Merge and split pdf files from military folder and scra folder
@@ -468,23 +497,31 @@ namespace PDFSplitterAndMerge
             ShowLoader();
             try
             {
-                string[] pdfFiles = Directory.GetFiles(PCLfolderPath, "*.pdf");
-                if (pdfFiles.Count() != 0)
+                string txtcomppth = txtpclpath.Text;
+                if (txtcomppth == "")
                 {
-
-                    foreach (string pdfFile in pdfFiles)
-                    {
-
-                        // Start the PDF splitting process asynchronously
-                        await SplitPCLPDF(pdfFile);
-                    }
-                    MessageBox.Show("PDF files have been split successfully.");
-                    // Hide the loader
+                    MessageBox.Show("Please select PCL folder");
                     HideLoader();
                 }
                 else
                 {
-                    MessageBox.Show("Folder does not contain any pdf files.");
+                    string[] pdfFiles = Directory.GetFiles(PCLfolderPath, "*.pdf");
+                    if (pdfFiles.Count() != 0)
+                    {
+                        foreach (string pdfFile in pdfFiles)
+                        {
+
+                            // Start the PDF splitting process asynchronously
+                            await SplitPCLPDF(pdfFile);
+                        }
+                        MessageBox.Show("PDF files have been split successfully.");
+                        // Hide the loader
+                        HideLoader();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Folder does not contain any pdf files.");
+                    }
                 }
             }
             catch (Exception)
@@ -493,8 +530,6 @@ namespace PDFSplitterAndMerge
                 throw;
             }
         }
-
-
 
         private async Task SplitPCLPDF(string pdfFilePath)
         {
@@ -508,10 +543,12 @@ namespace PDFSplitterAndMerge
                 string fileNumber = string.Empty;
                 string formattedDate = string.Empty;
                 string sfileNumber = string.Empty;
-                string sformattedDate = string.Empty; string lastLine = string.Empty;
+                string sformattedDate = string.Empty; string lastLine = string.Empty; 
+                int flnoarrindex = 0;
                 DateTime date;
                 using (PdfReader reader = new PdfReader(pdfFilePath))
                 {
+                    string[] fileno = new string[reader.NumberOfPages];
                     // Iterate through each page
                     for (int i = 1; i <= reader.NumberOfPages; i++)
                     {
@@ -521,75 +558,59 @@ namespace PDFSplitterAndMerge
                         // Split the text into separate lines
                         string[] lines = pageText.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-                        for(int j=0; j < lines.Length; j++)
+                        for (int j = 0; j < lines.Length - 1; j++)
                         {
+
                             string currentLine = lines[j].Trim();
-                            if(j+1 < lines.Length)
+                             nextLine = lines[ j+ 1].Trim();
+
+                            string[] words = lines[j].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                            string regex1 = @"^(0[1-9]|1[0-9]|2[0-9]|3[01])/(0[1-9]|1[0-2])/([0-9]{4})$";
+                            string pattern = @"^\d{7}$";
+                            foreach (string word in words)
                             {
-                                nextLine = lines[j + 1].Trim();
-                            }
-                             
-
-                            if (currentLine.StartsWith("DATE SIGNED"))
-                            {
-                                // Extract date from the next line
-                                Regex regex = new Regex(@"^([A-Za-z]+ \d{1,2}, \d{4})$");
-                                Match match = regex.Match(nextLine);
-
-                                string dateString = nextLine.Trim();//.Substring(dateIndex + 5).Trim(); //match.Groups[1].Value;
-
-                                // Parse the extracted date string
-                                if (DateTime.TryParseExact(dateString, "MM/dd/yyyy", null, System.Globalization.DateTimeStyles.None, out date))
+                                Match match1 = Regex.Match(word,regex1);
+                                Match match2=Regex.Match(word,pattern);
+                                if (match1.Success)
                                 {
-                                    // Format the date as "yyyyMMdd"
-                                    formattedDate = date.ToString("yyyyMMdd");
-                                    //return formattedDate;
+                                    date = Convert.ToDateTime(match1.Value);
+                                    //if (DateTime.TryParseExact(match1.Value, "mm/dd/yyyy", null, System.Globalization.DateTimeStyles.None, out date))
+                                    //{
+                                        // Format the date as "yyyyMMdd"
+                                        formattedDate = date.ToString("yyyyMMdd");
+                                        //return formattedDate;
+                                    //}
+
+                                    
+                                }
+                                if (match2.Success)
+                                {
+                                    fileNumber = match2.Value;
+                                    fileno[flnoarrindex] = fileNumber.Trim();
+                                    flnoarrindex = flnoarrindex + 1;
                                 }
                             }
-                            else if (currentLine.StartsWith("eFiling"))
-                            {
-                                fileNumber = nextLine.Substring(0, 7);
-                            }
-                            else if (currentLine.StartsWith("Date"))
-                            {
-                                // Find the index of "DATE:"
-                                int dateIndex = lines[j].IndexOf("Date:");
+                        }
+                    }
+                    for (int i = 0; i < fileno.Length - 1; i++)
+                    {
+                        int startPage;
+                        int endPage;
+                        string outputFilePath = string.Empty;
+                        string scraFilePath = string.Empty;
+                        if (fileno[i] != null)
+                        {                          
+                            
+                            startPage = i;
+                            outputFilePath = Path.Combine(PCLfolderPath, fileno[i] + "_PCL_" + formattedDate + ".pdf");
+                            PclSplitPage(reader, startPage + 1, outputFilePath);
+                            endPage = i + 1;
+                            outputFilePath = Path.Combine(PCLfolderPath, fileno[i+1] + "_OTH_" + formattedDate + ".pdf");
+                            PclSplitPage(reader, endPage + 1, outputFilePath);
 
-                                if (dateIndex != -1)
-                                {
-                                    // Extract the date substring
-                                    string dateSubstring = lines[j].Substring(dateIndex + 5).Trim();
-
-                                    // Parse the date in MM/dd/yyyy format
-
-                                    if (DateTime.TryParseExact(dateSubstring, "MM/dd/yyyy", null, System.Globalization.DateTimeStyles.None, out date))
-                                    {
-                                        // Format the date as yyyyMMdd
-                                        sformattedDate = date.ToString("yyyyMMdd");
-
-                                    }
-                                }
-                            }
-                            lastLine = lines[lines.Length - 1].Trim();
-                            if (!string.IsNullOrEmpty(lastLine))
-                            {
-                                string[] words = lastLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                sfileNumber = words[words.Length - 1];
-                            }
-
-                            if(fileNumber != "" && formattedDate != "")
-                            {
-                                string directoryname = Path.GetDirectoryName(pdfFilePath);
-                                string outputFilePath = Path.Combine(directoryname, $"{fileNumber}_PCL_{formattedDate}.pdf");
-                                PclSplitPage(reader, i, outputFilePath);
-                                fileNumber = "";formattedDate = "";
-                            }
-                            else if(sfileNumber != "" && sformattedDate != "")
-                            {
-                                string directoryname = Path.GetDirectoryName(pdfFilePath);
-                                string outputFilePath = Path.Combine(directoryname, $"{sfileNumber}_OTH_{sformattedDate}.pdf");
-                                PclSplitPage(reader, i, outputFilePath);sfileNumber = "";sformattedDate = "";
-                            }
+                             i+= 1;
+                            
                         }
                     }
                 }
