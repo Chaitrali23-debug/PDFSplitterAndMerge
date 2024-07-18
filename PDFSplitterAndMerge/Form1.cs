@@ -82,8 +82,6 @@ namespace PDFSplitterAndMerge
 
         private async void btnSplit_Click(object sender, EventArgs e)
         {
-            // Show the loader
-            ShowLoader();
             try
             {
                 string txtcomppth = txtFolderName.Text;
@@ -123,6 +121,8 @@ namespace PDFSplitterAndMerge
         // Complete folder files splitting
         private async Task SplitPDF(string pdfFilePath)
         {
+            // Show the loader
+            ShowLoader();
             try
             {
                 // Simulate the splitting process with a delay
