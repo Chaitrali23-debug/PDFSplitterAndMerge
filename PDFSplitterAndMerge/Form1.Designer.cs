@@ -144,7 +144,7 @@
             // btnSplitAndMerge
             // 
             this.btnSplitAndMerge.Font = new System.Drawing.Font("Microsoft Tai Le", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSplitAndMerge.Location = new System.Drawing.Point(673, 187);
+            this.btnSplitAndMerge.Location = new System.Drawing.Point(673, 141);
             this.btnSplitAndMerge.Name = "btnSplitAndMerge";
             this.btnSplitAndMerge.Size = new System.Drawing.Size(156, 23);
             this.btnSplitAndMerge.TabIndex = 9;
