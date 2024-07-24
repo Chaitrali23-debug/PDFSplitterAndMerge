@@ -82,8 +82,7 @@ namespace PDFSplitterAndMerge
 
         private async void btnSplit_Click(object sender, EventArgs e)
         {
-            // Show the loader
-            ShowLoader();
+            
             try
             {
                 string txtcomppth = txtFolderName.Text;
@@ -106,6 +105,7 @@ namespace PDFSplitterAndMerge
                         MessageBox.Show("PDF files have been split successfully.");
                         // Hide the loader
                         HideLoader();
+                        txtFolderName.Text = "";
                     }
                     else
                     {
@@ -123,6 +123,8 @@ namespace PDFSplitterAndMerge
         // Complete folder files splitting
         private async Task SplitPDF(string pdfFilePath)
         {
+            // Show the loader
+            ShowLoader();
             try
             {
                 // Simulate the splitting process with a delay
@@ -224,7 +226,7 @@ namespace PDFSplitterAndMerge
 
         private async void btnSplitAndMerge_Click(object sender, EventArgs e)
         {
-            ShowLoader();
+            
             try
             {
                 if ((txtmilitary.Text != "") && (txtscrpath.Text != ""))
@@ -246,6 +248,8 @@ namespace PDFSplitterAndMerge
                         MessageBox.Show("PDF files have been split successfully.");
                         // Hide the loader
                         HideLoader();
+                        txtmilitary.Text = "";
+                        txtscrpath.Text = "";
                     }
                     else
                     {
@@ -312,8 +316,11 @@ namespace PDFSplitterAndMerge
         }
         public async Task ProcessPdf(string pdfFilePath, string militaryFolderPath, string scraFolderPath)
         {
+            // Show the loader
+            ShowLoader();
             try
             {
+                await Task.Delay(1000);
                 // Step 1: Read the original PDF file and split by file numbers
                 PdfReader reader = new PdfReader(pdfFilePath);
                 int pageCount = reader.NumberOfPages;
@@ -494,7 +501,7 @@ namespace PDFSplitterAndMerge
 
         private async void btnsplitpclfiles_Click(object sender, EventArgs e)
         {
-            ShowLoader();
+
             try
             {
                 string txtcomppth = txtpclpath.Text;
@@ -517,6 +524,7 @@ namespace PDFSplitterAndMerge
                         MessageBox.Show("PDF files have been split successfully.");
                         // Hide the loader
                         HideLoader();
+                        txtpclpath.Text = "";
                     }
                     else
                     {
@@ -533,6 +541,7 @@ namespace PDFSplitterAndMerge
 
         private async Task SplitPCLPDF(string pdfFilePath)
         {
+            // Show the loader
             ShowLoader();
             try
             {
